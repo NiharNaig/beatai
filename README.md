@@ -13,7 +13,8 @@ beatai/
 │   ├── billing/           # Billing & payments (Stripe)  → :8002
 │   └── analytics/         # Analytics & metrics  → :8003
 ├── shared/                # Shared Pydantic models & utils
-└── docker-compose.yml
+├── docker-compose.yml
+└── deploy.sh              # Google Cloud Run deploy script
 ```
 
 ## Quick Start (Docker)
@@ -73,3 +74,47 @@ uvicorn main:app --reload --port 8003
 | Auth      | 8001 |
 | Billing   | 8002 |
 | Analytics | 8003 |
+
+## Deploying to Google Cloud Run
+
+### 1. Install gcloud CLI
+
+```bash
+# macOS
+brew install google-cloud-sdk
+
+# Or download: https://cloud.google.com/sdk/docs/install
+```
+
+### 2. Login and create a project
+
+```bash
+gcloud auth login
+gcloud projects create beatai-prod --name="BeatAI"
+```
+
+> Copy the project ID — you'll need it next.
+
+### 3. Deploy
+
+```bash
+export GCP_PROJECT_ID=beatai-prod   # your project ID
+./deploy.sh
+```
+
+The script will:
+1. Enable Cloud Run + Artifact Registry APIs
+2. Build and push all Docker images
+3. Deploy each service to Cloud Run
+4. Print all public URLs when done
+
+### 4. Set secrets in Cloud Run
+
+After deploying, add your real secrets via the GCP Console or:
+
+```bash
+# Example: set Stripe key on billing service
+gcloud run services update billing \
+  --region us-central1 \
+  --set-env-vars STRIPE_SECRET_KEY=sk_live_...
+```
